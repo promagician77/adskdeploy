@@ -1,0 +1,496 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<meta name="robots" content="noindex, nofollow">
+<title>Deploy 2027 Console</title>
+<meta name="description" content="Rollout math, failure tests and JumpCloud setup for a Revit 2027, AutoCAD 2027 and Controlio rollout.">
+<style>:root{color-scheme:light dark}*,*::before,*::after{box-sizing:border-box}html{-webkit-text-size-adjust:100%}body{margin:0;font:15px/1.6 system-ui,-apple-system,Segoe UI,sans-serif}img,svg,video{max-width:100%;height:auto}button,input,select,textarea{font:inherit;color:inherit}table{border-collapse:collapse}[hidden]{display:none!important}</style>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@400;500;600&family=Source+Sans+3:wght@400;500;600;700&display=swap">
+<style>
+:root{
+  --bg:#eef0f2; --panel:#ffffff; --panel2:#f6f7f8; --ink:#14191f; --mut:#56616d; --faint:#85909b;
+  --line:#d5dade; --line2:#e6e9ec;
+  --ok:#1d6b46; --okbg:#e2f1e8; --warn:#8f5a06; --warnbg:#f8eedb; --bad:#a3302a; --badbg:#f8e5e3;
+  --accent:#0b5f8a; --accentbg:#e2eef5; --term:#0f1720; --termink:#d5dee6; --termfaint:#7f8d99;
+  --bar:#0b5f8a; --bar2:#9fb6c4;
+  --sans:"Source Sans 3",ui-sans-serif,system-ui,-apple-system,"Segoe UI",sans-serif;
+  --mono:"JetBrains Mono",ui-monospace,SFMono-Regular,Menlo,Consolas,monospace;
+}
+@media (prefers-color-scheme: dark){ :root:not([data-theme="light"]){
+  --bg:#0c1014; --panel:#141a20; --panel2:#182028; --ink:#e3e8ec; --mut:#9fabb6; --faint:#6f7c88;
+  --line:#26313b; --line2:#1e2730;
+  --ok:#5cc58f; --okbg:#122419; --warn:#e3a54b; --warnbg:#2a2011; --bad:#ec7a72; --badbg:#2b1615;
+  --accent:#6cb8e2; --accentbg:#11222e; --term:#080b0e; --termink:#cfd9e1; --termfaint:#6c7a86;
+  --bar:#6cb8e2; --bar2:#3a5566; color-scheme:dark }}
+:root[data-theme="dark"]{
+  --bg:#0c1014; --panel:#141a20; --panel2:#182028; --ink:#e3e8ec; --mut:#9fabb6; --faint:#6f7c88;
+  --line:#26313b; --line2:#1e2730;
+  --ok:#5cc58f; --okbg:#122419; --warn:#e3a54b; --warnbg:#2a2011; --bad:#ec7a72; --badbg:#2b1615;
+  --accent:#6cb8e2; --accentbg:#11222e; --term:#080b0e; --termink:#cfd9e1; --termfaint:#6c7a86;
+  --bar:#6cb8e2; --bar2:#3a5566; color-scheme:dark }
+*{box-sizing:border-box}
+[hidden]{display:none!important}
+body{background:var(--bg);color:var(--ink);font:16px/1.5 var(--sans);
+  padding-left:max(16px, env(safe-area-inset-left, 0px));padding-right:max(16px, env(safe-area-inset-right, 0px));padding-block:22px 48px}
+.wrap{max-width:1140px;margin:0 auto}
+header .kicker{font:600 12px var(--mono);letter-spacing:.06em;color:var(--accent);text-transform:uppercase}
+h1{font:700 28px/1.15 var(--sans);margin:6px 0 6px;letter-spacing:-.01em;text-wrap:balance}
+h2{font:700 19px/1.25 var(--sans);margin:0 0 8px;text-wrap:balance}
+h3{font:600 12px var(--sans);letter-spacing:.08em;text-transform:uppercase;color:var(--faint);margin:0 0 8px}
+p{margin:0 0 10px;max-width:72ch}
+.lede{color:var(--mut);max-width:80ch}
+.mut{color:var(--mut)} .mono{font-family:var(--mono)}
+nav{display:flex;flex-wrap:wrap;gap:6px;border-bottom:1px solid var(--line);margin:16px 0 18px;padding-bottom:10px}
+nav a{font:600 14.5px var(--sans);color:var(--mut);text-decoration:none;padding:7px 13px;border-radius:7px;border:1px solid transparent}
+nav a[aria-current="page"]{color:var(--ink);background:var(--panel);border-color:var(--line)}
+.card{background:var(--panel);border:1px solid var(--line);border-radius:10px;padding:16px;min-width:0}
+.grid{display:grid;gap:12px}
+.g2{grid-template-columns:minmax(0,1fr) minmax(0,1fr)}
+.g3{grid-template-columns:repeat(3,minmax(0,1fr))}
+.side{grid-template-columns:minmax(0,340px) minmax(0,1fr)}
+@media (max-width:900px){.side,.g3{grid-template-columns:minmax(0,1fr)}}
+@media (max-width:640px){.g2{grid-template-columns:minmax(0,1fr)}}
+label.f{display:block;font:600 13px var(--sans);color:var(--mut);margin:10px 0 4px}
+select,input[type=number]{width:100%;font:15px var(--sans);padding:7px 9px;border:1px solid var(--line);border-radius:7px;background:var(--panel2);color:var(--ink)}
+.seg{display:flex;flex-wrap:wrap;gap:6px}
+.seg button,.btn{font:600 14px var(--sans);padding:7px 12px;border-radius:7px;border:1px solid var(--line);background:var(--panel2);color:var(--ink);cursor:pointer}
+.seg button[aria-pressed="true"]{background:var(--accentbg);border-color:var(--accent);color:var(--accent)}
+.btn.primary{background:var(--accent);border-color:var(--accent);color:var(--panel)}
+.btn.danger{border-color:var(--bad);color:var(--bad);background:var(--badbg)}
+.btn:disabled{opacity:.45;cursor:not-allowed}
+.big{font:700 30px/1.1 var(--sans);letter-spacing:-.01em}
+.unit{font:600 14px var(--sans);color:var(--mut)}
+.stat{padding:12px 14px;border:1px solid var(--line2);border-radius:9px;background:var(--panel2);min-width:0}
+.stat .k{font:600 12.5px var(--sans);color:var(--mut)}
+.stat.bad{background:var(--badbg);border-color:var(--bad)} .stat.bad .big{color:var(--bad)}
+.stat.ok{background:var(--okbg);border-color:var(--ok)} .stat.ok .big{color:var(--ok)}
+.note{font-size:14px;color:var(--mut);margin-top:8px}
+.callout{border-left:4px solid var(--warn);background:var(--warnbg);padding:11px 14px;border-radius:8px;margin:12px 0 0;font-size:15px}
+.callout.ok{border-color:var(--ok);background:var(--okbg)}
+.callout.bad{border-color:var(--bad);background:var(--badbg)}
+.diskrow{margin:12px 0}
+.diskrow .lbl{display:flex;justify-content:space-between;gap:8px;font-size:14px;margin-bottom:4px;flex-wrap:wrap}
+.track{position:relative;height:22px;border-radius:6px;background:var(--panel2);border:1px solid var(--line);overflow:hidden}
+.fill{position:absolute;left:0;top:0;bottom:0;background:var(--bar);border-radius:5px 0 0 5px;transition:width .25s}
+.fill.over{background:var(--bad)}
+.gate{position:absolute;top:-3px;bottom:-3px;width:2px;background:var(--ink)}
+table{border-collapse:collapse;width:100%;font-size:14.5px}
+th,td{text-align:left;padding:7px 8px;border-bottom:1px solid var(--line2);vertical-align:top}
+th{font:600 12px var(--sans);letter-spacing:.06em;text-transform:uppercase;color:var(--faint)}
+.tbl{overflow-x:auto}
+.code{font:600 13px var(--mono)}
+.pill{display:inline-block;font:600 12px var(--mono);padding:1px 7px;border-radius:999px;border:1px solid var(--line)}
+.pill.ok{color:var(--ok);border-color:var(--ok);background:var(--okbg)}
+.pill.bad{color:var(--bad);border-color:var(--bad);background:var(--badbg)}
+.pill.warn{color:var(--warn);border-color:var(--warn);background:var(--warnbg)}
+.term{background:var(--term);color:var(--termink);border-radius:9px;padding:12px 14px;font:12.5px/1.55 var(--mono);height:300px;overflow:auto;white-space:pre-wrap;overflow-wrap:anywhere}
+.term .w{color:#e9b44c} .term .e{color:#f08a80} .term .g{color:#7fd3a4} .term .d{color:var(--termfaint)}
+.pk{display:grid;grid-template-columns:minmax(0,130px) minmax(0,1fr) minmax(0,92px);gap:10px;align-items:center;padding:8px 0;border-bottom:1px solid var(--line2)}
+.pk .nm{font-weight:600}
+.pk .ph{font:600 12px var(--mono);text-align:right;color:var(--mut)}
+.pk .ph.ok{color:var(--ok)} .pk .ph.bad{color:var(--bad)}
+.ptrack{height:10px;border-radius:5px;background:var(--panel2);border:1px solid var(--line);overflow:hidden;position:relative}
+.ptrack i{position:absolute;left:0;top:0;bottom:0;background:var(--bar)}
+.ptrack b{position:absolute;left:0;top:0;bottom:0;background:var(--bar2)}
+.scen{display:grid;grid-template-columns:minmax(0,1fr);gap:6px;max-height:560px;overflow:auto}
+.scen button{display:grid;grid-template-columns:44px minmax(0,1fr) auto;gap:8px;align-items:center;text-align:left;padding:8px 10px;border-radius:8px;border:1px solid var(--line);background:var(--panel);color:var(--ink);font:inherit;font-size:14.5px;cursor:pointer;width:100%}
+.scen button[aria-pressed="true"]{outline:2px solid var(--accent);outline-offset:1px;background:var(--accentbg)}
+.scen .id{font:600 12.5px var(--mono);color:var(--faint)}
+pre{font:12.5px/1.55 var(--mono);background:var(--panel2);border:1px solid var(--line2);border-radius:8px;padding:12px;overflow-x:auto;margin:8px 0;white-space:pre}
+.kv{display:grid;grid-template-columns:auto minmax(0,1fr);gap:4px 14px;font-size:14.5px}
+.kv dt{color:var(--mut)} .kv dd{margin:0;font-weight:600}
+.term,.term *,pre,.mono,.code,.pill{font-variant-ligatures:none!important;font-feature-settings:"calt" 0,"liga" 0,"dlig" 0!important}
+#scen-detail pre{white-space:pre-wrap;overflow-wrap:anywhere}
+footer{margin-top:26px;font-size:13.5px;color:var(--faint);max-width:90ch}
+</style>
+</head>
+<body>
+<div class="wrap">
+<header>
+  <div class="kicker">Controlio · Revit 2027 · AutoCAD 2027 · 15 Windows PCs · JumpCloud</div>
+  <h1>Deploy 2027 Console</h1>
+  <p class="lede">The rollout's numbers, the deployment script's behaviour under failure, and the JumpCloud setup. Every figure comes from the calculator and the test harness that ship with the proposal.</p>
+</header>
+
+<nav id="tabs">
+  <a href="#math" data-tab="math">Rollout math</a>
+  <a href="#runs" data-tab="runs">Test runs</a>
+  <a href="#jumpcloud" data-tab="jumpcloud">JumpCloud setup</a>
+  <a href="#plan" data-tab="plan">Plan</a>
+</nav>
+
+<!-- ===================================================== math -->
+<section id="tab-math">
+  <div class="grid side">
+    <div class="card">
+      <h2>Your rollout</h2>
+      <label class="f" for="in-pcs">PCs</label>
+      <input id="in-pcs" type="number" min="1" max="500" step="1">
+      <label class="f" for="in-revit">Revit 2027 zip, GB</label>
+      <input id="in-revit" type="number" min="0" step="0.5">
+      <label class="f" for="in-acad">AutoCAD 2027 zip, GB</label>
+      <input id="in-acad" type="number" min="0" step="0.5">
+      <label class="f" for="in-plan">Egnyte plan</label>
+      <select id="in-plan"></select>
+      <label class="f">Where the PCs pull from</label>
+      <div class="seg" id="in-src">
+        <button type="button" data-v="direct" aria-pressed="true">Egnyte, every PC</button>
+        <button type="button" data-v="seed" aria-pressed="false">Office NAS, one copy</button>
+      </div>
+      <label class="f" for="in-up">Office uplink</label>
+      <select id="in-up"><option value="100">100 Mbps</option><option value="300" selected>300 Mbps</option><option value="1000">1 Gbps</option></select>
+      <p class="note">Plan caps quoted from Egnyte's restrictions page: 5 GB an hour, and 30 or 60 GB a month, on certain Platform and Legacy plans.</p>
+    </div>
+    <div class="grid" style="gap:12px">
+      <div class="card">
+        <h3>Egnyte share-link traffic</h3>
+        <div class="grid g3">
+          <div class="stat" id="st-traffic"><div class="k">Through share links</div><div class="big" id="o-traffic"></div></div>
+          <div class="stat" id="st-hours"><div class="k">At 5 GB an hour</div><div class="big" id="o-hours"></div></div>
+          <div class="stat" id="st-month"><div class="k">Months of quota</div><div class="big" id="o-month"></div></div>
+        </div>
+        <div class="callout" id="o-verdict"></div>
+      </div>
+      <div class="card">
+        <h3>Temporary files on C:, worst moment</h3>
+        <div class="diskrow"><div class="lbl"><span>Download all, extract all, then install</span><span class="mono" id="o-all"></span></div>
+          <div class="track"><div class="fill" id="b-all"></div><div class="gate" id="g1"></div></div></div>
+        <div class="diskrow"><div class="lbl"><span><b>One package at a time</b>, zip deleted after extract</span><span class="mono" id="o-seq"></span></div>
+          <div class="track"><div class="fill" id="b-seq"></div><div class="gate" id="g2"></div></div></div>
+        <p class="note">Black line: your 120 GB free-space gate. Bar: staging only; what is left is room for the installs themselves. A zip of installer media is assumed to unpack to about its own size until the pilot logs the real figure.</p>
+      </div>
+      <div class="card">
+        <h3>Download time on one shared office line</h3>
+        <p id="o-uplink" style="margin:0"></p>
+        <p class="note">The scheduled task starts each PC 2 to 32 minutes after staging, at random, so 15 PCs do not open 15 downloads in the same second.</p>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- ===================================================== runs -->
+<section id="tab-runs" hidden>
+  <div class="grid g2">
+    <div class="card">
+      <h2>One PC, simulated</h2>
+      <p class="mut" style="font-size:15px">The script's logic replayed at speed: press Start, then kill it mid-download as a reboot or power cut would, then run it again. Times are compressed; the real harness results are below.</p>
+      <div class="seg" style="margin:8px 0 10px">
+        <button class="btn primary" id="sim-start" type="button">Start</button>
+        <button class="btn danger" id="sim-kill" type="button" disabled>Kill mid-download</button>
+        <button class="btn" id="sim-again" type="button" disabled>Run again</button>
+        <button class="btn" id="sim-reset" type="button">Reset</button>
+      </div>
+      <div id="sim-pk"></div>
+      <div class="diskrow"><div class="lbl"><span>Staging on C:</span><span class="mono" id="sim-disk"></span></div>
+        <div class="track"><div class="fill" id="sim-diskbar"></div></div></div>
+      <div class="kv" style="margin-top:6px"><dt>Exit code</dt><dd id="sim-exit" class="mono">-</dd></div>
+    </div>
+    <div class="card" style="display:flex;flex-direction:column">
+      <h3>logs\deploy.log</h3>
+      <div class="term" id="sim-log" aria-live="polite"></div>
+    </div>
+  </div>
+
+  <div class="card" style="margin-top:12px">
+    <h2 id="runs-h"></h2>
+    <p class="mut" style="font-size:15px" id="runs-sub"></p>
+    <div class="grid side" style="margin-top:8px">
+      <div class="scen" id="scen"></div>
+      <div id="scen-detail" style="min-width:0"></div>
+    </div>
+  </div>
+</section>
+
+<!-- ===================================================== jumpcloud -->
+<section id="tab-jumpcloud" hidden>
+  <div class="grid g2">
+    <div class="card">
+      <h2>Command 1: Deploy 2027 - stage</h2>
+      <dl class="kv">
+        <dt>Type</dt><dd>Windows, PowerShell</dd>
+        <dt>Run As</dt><dd>default (NT AUTHORITY\SYSTEM)</dd>
+        <dt>Timeout After</dt><dd>600 seconds</dd>
+        <dt>Time to Live</dt><dd>7 days</dd>
+        <dt>Body</dt><dd id="jc-bytes"></dd>
+      </dl>
+      <p class="note">JumpCloud: Timeout After "determines how long the command can continue running before the agent will terminate it." This command finishes in seconds, so it never meets that limit. It writes the script and its settings, checks both SHA-256 hashes, locks the folder, and registers the task below.</p>
+<pre>C:\ProgramData\Deploy2027\
+  Deploy.ps1        the script
+  packages.json     links, sizes, hashes, gates
+  state.json        where each package got to
+  status.json       read by command 2
+  logs\deploy.log
+  stage\            .part files and extracts, emptied when done</pre>
+    </div>
+    <div class="card">
+      <h2>Scheduled task: Deploy2027</h2>
+      <dl class="kv">
+        <dt>Runs as</dt><dd>SYSTEM, highest privileges</dd>
+        <dt>Starts</dt><dd>2 minutes after staging, plus 0 to 30 at random</dd>
+        <dt>Again</dt><dd>at every boot, until all three are in</dd>
+        <dt>Time limit</dt><dd>none; the script has its own stall timeout</dd>
+        <dt>Overlap</dt><dd>ignored; a lock file stops a second run</dd>
+        <dt>Removed</dt><dd>when the run ends 0 or 3010</dd>
+      </dl>
+      <h2 style="margin-top:16px">Command 2: Deploy 2027 - status</h2>
+<pre>&amp; 'C:\ProgramData\Deploy2027\Deploy.ps1' -Status
+exit $LASTEXITCODE</pre>
+      <p class="note">Prints status.json and the last 40 log lines. The result code shows on each PC's row on the JumpCloud results page.</p>
+    </div>
+  </div>
+  <div class="card" style="margin-top:12px">
+    <h2>Exit codes</h2>
+    <div class="tbl"><table id="codes"><thead><tr><th>Code</th><th>Meaning</th><th>What to do</th></tr></thead><tbody></tbody></table></div>
+  </div>
+</section>
+
+<!-- ===================================================== plan -->
+<section id="tab-plan" hidden>
+  <div class="grid g2">
+    <div class="card">
+      <h2>Two weeks</h2>
+      <div class="tbl"><table id="plan"><thead><tr><th>#</th><th>Step</th><th>Hours</th></tr></thead><tbody></tbody></table></div>
+    </div>
+    <div class="card">
+      <h2>Settled in week one</h2>
+      <div class="tbl"><table>
+        <thead><tr><th>Open point</th><th>How</th></tr></thead>
+        <tbody>
+          <tr><td>Your Egnyte plan, and whether the link cap applies</td><td>admin console</td></tr>
+          <tr><td>Which link form returns the file, not the preview page</td><td>link check; a web page stops with exit 21</td></tr>
+          <tr><td>Whether Egnyte links honour HTTP Range</td><td>link check; the script works either way</td></tr>
+          <tr><td>Each product's real install footprint</td><td>logged on the two pilot PCs</td></tr>
+          <tr><td>Click-limited link expiry</td><td>use a date instead; resumed requests may count as clicks</td></tr>
+        </tbody></table></div>
+    </div>
+  </div>
+</section>
+
+<footer>Sources: Egnyte Help Center articles 201637594 and 115000279472; JumpCloud "Create a Command"; Controlio KB 360019260358; Autodesk AutoCAD 2027 installation requirements; Microsoft Windows 10 lifecycle. The simulation replays the script's logic; the scenario table is the output of a real PowerShell run.</footer>
+</div>
+
+<script id="calc">
+function rollout(i, cap) {
+  var zips = i.controlioGB + i.revitGB + i.acadGB;
+  var traffic = i.seed ? zips : zips * i.pcs;
+  var peakAll = 2 * (i.controlioGB + i.revitGB + i.acadGB) * 1;
+  var peakSeq = Math.max(2 * i.controlioGB, 2 * i.revitGB, 2 * i.acadGB);
+  var r = {
+    zips: zips, traffic: traffic, peakAll: peakAll, peakSeq: peakSeq,
+    leftAll: i.gateGB - peakAll, leftSeq: i.gateGB - peakSeq,
+    capped: !!cap, hours: null, months: null, pcsPerMonth: null, fitsMonth: true,
+    uplinkHours: traffic * 1e9 * 8 / (i.mbps * 1e6) / 3600,
+    onePcHours: zips * 1e9 * 8 / (i.mbps * 1e6) / 3600
+  };
+  if (cap) {
+    r.hours = traffic / cap.gb_per_hour;
+    r.months = traffic / cap.gb_per_month;
+    r.pcsPerMonth = cap.gb_per_month / zips;
+    r.fitsMonth = traffic <= cap.gb_per_month;
+  }
+  return r;
+}
+</script>
+<script>
+var CAP = {"endpoints": 15, "packages": [{"name": "Controlio", "zip_gb": 0.054}, {"name": "Revit 2027", "zip_gb": 25.0}, {"name": "AutoCAD 2027", "zip_gb": 25.0}], "zips_per_endpoint_gb": 50.054, "extract_ratio_assumed": 1.0, "recommended_free_gb": 120, "staging_peak_all_at_once_gb": 100.11, "staging_peak_sequential_gb": 50.0, "left_for_installs_sequential_gb": 70.0, "left_for_installs_all_at_once_gb": 19.89, "link_traffic_direct_gb": 750.81, "link_traffic_seed_once_gb": 50.05, "largest_zip_gb": 25.0, "folder_zip_cap_gb": 10, "largest_zip_over_folder_cap": true, "single_file_link_limit_gb": 100, "caps": [{"plan": "Team", "gb_per_hour": 5, "gb_per_month": 30, "direct_hours_at_cap": 150.2, "direct_months_at_cap": 25.0, "endpoints_per_month": 0.6, "seed_fits_one_month": false}, {"plan": "Office / Business", "gb_per_hour": 5, "gb_per_month": 60, "direct_hours_at_cap": 150.2, "direct_months_at_cap": 12.5, "endpoints_per_month": 1.2, "seed_fits_one_month": true}, {"plan": "Cloud File Server", "gb_per_hour": 5, "gb_per_month": 30, "direct_hours_at_cap": 150.2, "direct_months_at_cap": 25.0, "endpoints_per_month": 0.6, "seed_fits_one_month": false}, {"plan": "Advanced File System", "gb_per_hour": 5, "gb_per_month": 60, "direct_hours_at_cap": 150.2, "direct_months_at_cap": 12.5, "endpoints_per_month": 1.2, "seed_fits_one_month": true}], "uplink": [{"mbps": 100, "one_endpoint_hours": 1.1, "all_direct_hours": 16.7}, {"mbps": 300, "one_endpoint_hours": 0.4, "all_direct_hours": 5.6}, {"mbps": 1000, "one_endpoint_hours": 0.1, "all_direct_hours": 1.7}]};
+var RUNS = {"pwsh": "7.4.6", "command_bytes": 44207, "passed": 16, "rows": [{"id": "S01", "title": "Clean run, all three packages", "expect": 0, "got": 0, "ok": true, "problems": [], "requests": 3, "range_requests": 0, "leftover": 0, "note": "", "evidence": ["INFO  Controlio: SHA-256 36C1C30FD84418F335A2CC5EF4DCB7E1EC268672720BEDEF3E91D265E4D4665D (no expected hash in config; record it there)", "INFO  Controlio: zip deleted after extract", "INFO  staging folder emptied", "INFO  Revit 2027: run \"<tmp>/S01/stage/Revit2027.zip.x/Revit2027/image/Installer.exe\" -i deploy --offline_mode -q -o \"<tmp>/S01/stage/Revit2027.zip.x/Revit2027/image\\Collection.xml\" --installer_version \"2.17.0.12\"", "INFO  Revit 2027: image path C:\\Autodesk\\Deploy\\Revit2027\\image -> <tmp>/S01/stage/Revit2027.zip.x/Revit2027/image in the command line and 1 XML file(s)"]}, {"id": "S02", "title": "Connection drops three times mid-download", "expect": 0, "got": 0, "ok": true, "problems": [], "requests": 7, "range_requests": 4, "leftover": 0, "note": "", "evidence": ["WARN  attempt 1 failed: Exception calling \"Wait\" with \"1\" argument(s): \"One or more errors occurred. (The response ended prematurely, with at least 10491607 additional bytes expected. (ResponseEnded))\" / One or more errors occurred. (The response ended prematurely, with at least 10491607 additional bytes expected. (ResponseEnded)). Retrying in 0 s", "INFO  resuming at 0.01 GB (HTTP 206)", "INFO  Revit 2027: SHA-256 matches"]}, {"id": "S03", "title": "Server ignores Range and drops", "expect": 0, "got": 0, "ok": true, "problems": [], "requests": 6, "range_requests": 3, "leftover": 0, "note": "", "evidence": ["WARN  server ignored Range (HTTP 200): restarting from zero, 0.01 GB discarded", "INFO  Revit 2027: SHA-256 matches"]}, {"id": "S04", "title": "Server stalls, no data for longer than StallSeconds", "expect": 0, "got": 0, "ok": true, "problems": [], "requests": 8, "range_requests": 5, "leftover": 0, "note": "", "evidence": ["WARN  attempt 1 failed: no data for 2 s. Retrying in 0 s", "INFO  resuming at 0.00 GB (HTTP 206)"]}, {"id": "S05", "title": "Link answers with a web page instead of the file", "expect": 21, "got": 21, "ok": true, "problems": [], "requests": 3, "range_requests": 0, "leftover": 0, "note": "", "evidence": ["WARN  Revit 2027: source failed (21): http://egnyte-stand-in/html/S05_Revit2027.zip answered with a web page (text/html), not the file. Use the link's direct-download form.", "ERROR Revit 2027: FAILED 21: http://egnyte-stand-in/html/S05_Revit2027.zip answered with a web page (text/html), not the file. Use the link's direct-download form.", "INFO  AutoCAD 2027: installed (exit 0); install took 0.0 GB net of staging; staging removed"]}, {"id": "S06", "title": "Link expired or removed (404)", "expect": 20, "got": 20, "ok": true, "problems": [], "requests": 3, "range_requests": 0, "leftover": 0, "note": "", "evidence": ["WARN  Revit 2027: source failed (20): http://egnyte-stand-in/gone/S06_Revit2027.zip returned 404: link expired, removed or not public", "ERROR Revit 2027: FAILED 20: http://egnyte-stand-in/gone/S06_Revit2027.zip returned 404: link expired, removed or not public"]}, {"id": "S07", "title": "Windows 10 (build 19045)", "expect": 10, "got": 10, "ok": true, "problems": [], "requests": 0, "range_requests": 0, "leftover": 0, "note": "", "evidence": ["ERROR FAILED 10: Windows build 19045 is below 22000 (Windows 11). Not starting a 50 GB download."]}, {"id": "S08", "title": "40 GB free against the 120 GB gate", "expect": 11, "got": 11, "ok": true, "problems": [], "requests": 0, "range_requests": 0, "leftover": 0, "note": "", "evidence": ["ERROR FAILED 11: 40.0 GB free on the staging drive; this rollout starts at 120 GB"]}, {"id": "S09", "title": "Downloaded file does not match the recorded SHA-256", "expect": 22, "got": 22, "ok": true, "problems": [], "requests": 3, "range_requests": 0, "leftover": 0, "note": "", "evidence": ["ERROR Revit 2027: FAILED 22: SHA-256 2C46BEE6CCC0ABB4391A6D4DF3D5FFC3D62EBBDEBFF37CB9469F7351BC8241D7, expected 0000000000000000000000000000000000000000000000000000000000000000"]}, {"id": "S10", "title": "Revit and AutoCAD 2027 already installed", "expect": 0, "got": 0, "ok": true, "problems": [], "requests": 0, "range_requests": 0, "leftover": 0, "note": "", "evidence": ["INFO  Revit 2027: already installed, skipped"]}, {"id": "S11", "title": "An install removes a 2025 product", "expect": 50, "got": 50, "ok": true, "problems": [], "requests": 3, "range_requests": 0, "leftover": 0, "note": "", "evidence": ["ERROR Autodesk Revit 2025 is no longer installed"]}, {"id": "S12", "title": "Installer exits 0 but the product never appears", "expect": 41, "got": 41, "ok": true, "problems": [], "requests": 3, "range_requests": 0, "leftover": 29369572, "note": "", "evidence": ["ERROR Revit 2027: FAILED 41: Revit 2027: installer exit 0 but nothing matches \"Revit 2027\" in the uninstall registry"]}, {"id": "S13", "title": "Archive tries to write outside its folder (zip-slip)", "expect": 30, "got": 30, "ok": true, "problems": [], "requests": 3, "range_requests": 0, "leftover": 482, "note": "", "evidence": ["ERROR Revit 2027: FAILED 30: entry escapes the extract folder: ../../escaped.txt"]}, {"id": "S14", "title": "Another run already holds the lock", "expect": 2, "got": 2, "ok": true, "problems": [], "requests": 0, "range_requests": 0, "leftover": 0, "note": "", "evidence": ["WARN  another run holds the lock; exiting"]}, {"id": "S15", "title": "Run killed mid-download, next run resumes the .part", "expect": 0, "got": 0, "ok": true, "problems": [], "requests": 2, "range_requests": 1, "leftover": 0, "note": "killed once the .part passed 8 MB", "evidence": ["INFO  resuming at 0.01 GB (HTTP 206)", "INFO  Revit 2027: SHA-256 matches"]}, {"id": "S16", "title": "Controlio delivered as a bare MSI, not a zip", "expect": 0, "got": 0, "ok": true, "problems": [], "requests": 1, "range_requests": 0, "leftover": 0, "note": "", "evidence": ["INFO  Controlio: run \"msiexec.exe\" /i \"<tmp>/S16/stage/Controlio.msi\" /qn /norestart /l*v \"<tmp>/S16/logs/Controlio_msi.log\""]}]};
+var PLAN = {"rows": [["1", "Scripts fitted to your three real links and packages", "6", "`07_harness.py` passes 16/16 against your settings"], ["2", "Link check: each link returns the file, sizes and SHA-256 recorded", "2", "`05_packages.json` has real Bytes and Sha256"], ["3", "JumpCloud: stage and status commands, device groups for waves", "2", "both commands saved, targets in three groups"], ["4", "Pilot on two PCs, one of them a busy one with 2025 open projects", "6", "exit 0 or 3010 on both; install footprint logged; 2025 unchanged"], ["5", "Waves: 5 PCs, then the remaining 8", "4", "status command shows 0 or 3010 for all 15"], ["6", "Handover: runbook, exit codes, reuse for the next release", "2", "you can run it for 2028 without me"]], "total": 22};
+var CODES = [["0", "All three installed, or already present", "nothing"], ["3010", "Installed, reboot pending", "reboot at a convenient time"], ["2", "Another run holds the lock", "nothing; the running task finishes the job"], ["10", "Windows build below 22000", "upgrade to Windows 11 first; nothing was downloaded"], ["11", "Not enough free disk", "free space; nothing was downloaded"], ["20", "Download failed after retries, or link 403/404/410", "check the link; the .part is kept and resumes"], ["21", "Link served a web page, not the file", "use the link's direct-download form"], ["22", "Size or SHA-256 mismatch", "file deleted; re-upload or fix the hash in config"], ["30", "Archive unreadable, unsafe or path too long", "re-zip the deployment"], ["40", "Installer returned an error", "read logs\\deploy.log and the installer log"], ["41", "Installer said OK, product not in Programs", "read the installer log"], ["50", "An Autodesk 2025 product changed", "stop the rollout and look before the next PC"], ["99", "Unexpected error", "the log names the line; send it to me"]];
+
+function $(id){ return document.getElementById(id); }
+function fmt(n, d){ return Number(n).toLocaleString('en-US', {minimumFractionDigits: d, maximumFractionDigits: d}); }
+function esc(s){ return String(s).replace(/[&<>"]/g, function(c){ return {'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c]; }); }
+
+/* ---------- tabs ---------- */
+var TABS = ['math','runs','jumpcloud','plan'];
+function show(t){
+  if (TABS.indexOf(t) < 0) t = 'math';
+  TABS.forEach(function(k){ $('tab-'+k).hidden = (k !== t); });
+  document.querySelectorAll('#tabs a').forEach(function(a){
+    if (a.dataset.tab === t) a.setAttribute('aria-current','page'); else a.removeAttribute('aria-current');
+  });
+}
+window.addEventListener('hashchange', function(){ show(location.hash.slice(1)); });
+document.querySelectorAll('#tabs a').forEach(function(a){
+  a.addEventListener('click', function(e){ e.preventDefault(); history.replaceState(null,'','#'+a.dataset.tab); show(a.dataset.tab); });
+});
+
+/* ---------- rollout math ---------- */
+var pkgGB = {};
+CAP.packages.forEach(function(p){ pkgGB[p.name] = p.zip_gb; });
+$('in-pcs').value = CAP.endpoints;
+$('in-revit').value = pkgGB['Revit 2027'];
+$('in-acad').value = pkgGB['AutoCAD 2027'];
+var planSel = $('in-plan');
+planSel.innerHTML = '<option value="-1">Not a capped plan</option>' + CAP.caps.map(function(c, i){
+  return '<option value="'+i+'"'+(i===1?' selected':'')+'>'+esc(c.plan)+' ('+c.gb_per_hour+' GB/h, '+c.gb_per_month+' GB/month)</option>';
+}).join('');
+var srcSeed = false;
+document.querySelectorAll('#in-src button').forEach(function(b){
+  b.addEventListener('click', function(){
+    srcSeed = b.dataset.v === 'seed';
+    document.querySelectorAll('#in-src button').forEach(function(x){ x.setAttribute('aria-pressed', String(x === b)); });
+    calc();
+  });
+});
+function inputs(){
+  return { pcs: Math.max(1, +$('in-pcs').value || 1), controlioGB: pkgGB['Controlio'],
+    revitGB: Math.max(0, +$('in-revit').value || 0), acadGB: Math.max(0, +$('in-acad').value || 0),
+    gateGB: CAP.recommended_free_gb, mbps: +$('in-up').value, seed: srcSeed };
+}
+function calc(){
+  var i = inputs(), pi = +planSel.value, cap = pi >= 0 ? CAP.caps[pi] : null;
+  var r = rollout(i, cap);
+  $('o-traffic').innerHTML = fmt(r.traffic, 1) + ' <span class="unit">GB</span>';
+  if (cap) {
+    $('o-hours').innerHTML = fmt(r.hours, 1) + ' <span class="unit">hours</span>';
+    $('o-month').innerHTML = fmt(r.months, 1) + ' <span class="unit">' + (r.fitsMonth ? 'of one month' : 'months') + '</span>';
+  } else {
+    $('o-hours').innerHTML = '<span class="unit">no cap</span>';
+    $('o-month').innerHTML = '<span class="unit">no cap</span>';
+  }
+  $('st-hours').className = 'stat' + (cap && r.hours > 24 ? ' bad' : '');
+  $('st-month').className = 'stat' + (cap ? (r.fitsMonth ? ' ok' : ' bad') : '');
+  var v = $('o-verdict');
+  if (!cap) { v.className = 'callout ok'; v.innerHTML = 'No link cap on this plan: every PC can pull straight from Egnyte. The office line is the only limit.'; }
+  else if (!i.seed) { v.className = 'callout bad'; v.innerHTML = '<b>Direct pulls hit the cap.</b> ' + esc(cap.plan) + ' allows ' + cap.gb_per_month + ' GB a month: enough for ' + fmt(r.pcsPerMonth, 2) + ' PCs. Switch to <b>Office NAS, one copy</b>.'; }
+  else if (r.fitsMonth) { v.className = 'callout ok'; v.innerHTML = 'One copy is ' + fmt(r.traffic, 1) + ' GB, inside the ' + cap.gb_per_month + ' GB month. Better still, an admin pulls it through the Egnyte Desktop App, which is not a share link at all.'; }
+  else { v.className = 'callout'; v.innerHTML = 'Even one copy (' + fmt(r.traffic, 1) + ' GB) is over the ' + cap.gb_per_month + ' GB month. The admin pulls it through the Egnyte Desktop App, which Egnyte says is only subject to plan file size limits.'; }
+  var scale = Math.max(r.peakAll, i.gateGB) * 1.05;
+  $('b-all').style.width = (r.peakAll / scale * 100) + '%';
+  $('b-seq').style.width = (r.peakSeq / scale * 100) + '%';
+  $('b-all').className = 'fill' + (r.leftAll < 30 ? ' over' : '');
+  $('b-seq').className = 'fill' + (r.leftSeq < 30 ? ' over' : '');
+  $('g1').style.left = $('g2').style.left = (i.gateGB / scale * 100) + '%';
+  $('o-all').textContent = fmt(r.peakAll, 2) + ' GB, leaves ' + fmt(r.leftAll, 2);
+  $('o-seq').textContent = fmt(r.peakSeq, 2) + ' GB, leaves ' + fmt(r.leftSeq, 2);
+  $('o-uplink').innerHTML = 'At ' + (i.mbps >= 1000 ? '1 Gbps' : i.mbps + ' Mbps') + ': one PC takes <b>' + fmt(r.onePcHours, 1) + ' h</b>; ' +
+    (i.seed ? 'the one copy takes the same, then PCs copy over the LAN.' : 'all ' + i.pcs + ' PCs together take <b>' + fmt(r.uplinkHours, 1) + ' h</b> of a fully used line.');
+}
+['in-pcs','in-revit','in-acad','in-plan','in-up'].forEach(function(id){ $(id).addEventListener('input', calc); $(id).addEventListener('change', calc); });
+
+/* ---------- simulation ---------- */
+var SIMPK = [
+  {name:'Controlio', gb: pkgGB['Controlio'], msi:true},
+  {name:'Revit 2027', gb: pkgGB['Revit 2027']},
+  {name:'AutoCAD 2027', gb: pkgGB['AutoCAD 2027']}
+];
+var sim;
+function simInit(){
+  sim = { pk: SIMPK.map(function(p){ return {name:p.name, gb:p.gb, msi:!!p.msi, part:0, ext:0, phase:'waiting'}; }),
+          running:false, timer:null, cur:0, killedOnce:false, exit:null };
+  $('sim-log').innerHTML = '';
+  $('sim-exit').textContent = '-';
+  $('sim-start').disabled = false; $('sim-kill').disabled = true; $('sim-again').disabled = true;
+  drawSim();
+}
+function stamp(){ var d = new Date(); return d.toTimeString().slice(0,8); }
+function log(msg, cls){
+  var el = $('sim-log');
+  el.insertAdjacentHTML('beforeend', '<span class="d">' + stamp() + '</span> ' + (cls ? '<span class="'+cls+'">' : '') + esc(msg) + (cls ? '</span>' : '') + '\n');
+  el.scrollTop = el.scrollHeight;
+}
+function staging(){ return sim.pk.reduce(function(s, p){ return s + p.part + p.ext; }, 0); }
+function drawSim(){
+  $('sim-pk').innerHTML = sim.pk.map(function(p){
+    var d = p.gb ? Math.min(100, p.part / p.gb * 100) : 0, x = p.gb ? Math.min(100, p.ext / p.gb * 100) : 0;
+    var cls = p.phase === 'installed' || p.phase === 'skipped' ? 'ok' : (p.phase === 'killed' ? 'bad' : '');
+    return '<div class="pk"><div class="nm">' + esc(p.name) + '</div><div class="ptrack"><b style="width:' + x + '%"></b><i style="width:' + d + '%"></i></div><div class="ph ' + cls + '">' + p.phase + '</div></div>';
+  }).join('');
+  var s = staging();
+  $('sim-disk').textContent = fmt(s, 2) + ' GB of ' + CAP.recommended_free_gb + ' GB gate';
+  $('sim-diskbar').style.width = Math.min(100, s / CAP.recommended_free_gb * 100) + '%';
+}
+function step(){
+  var p = sim.pk[sim.cur];
+  if (!p) { finish(); return; }
+  var rate = Math.max(p.gb / 28, 0.054);
+  if (p.phase === 'waiting') {
+    if (p.done) { p.phase = 'skipped'; log(p.name + ': already installed, skipped'); sim.cur++; drawSim(); return; }
+    if (p.part > 0) log('resuming at ' + fmt(p.part, 2) + ' GB (HTTP 206)', 'g');
+    else log(p.name + ': downloading from the Egnyte link');
+    p.phase = 'download';
+  } else if (p.phase === 'download') {
+    p.part = Math.min(p.gb, p.part + rate);
+    if (p.part >= p.gb) { log(p.name + ': SHA-256 matches'); p.phase = 'extract'; log(p.name + ': extracting'); $('sim-kill').disabled = true; }
+    else if (p.gb > 1) { $('sim-kill').disabled = false; if (Math.floor(p.part / 5) !== Math.floor((p.part - rate) / 5)) log(fmt(p.part, 2) + ' / ' + fmt(p.gb, 2) + ' GB'); }
+  } else if (p.phase === 'extract') {
+    p.ext = Math.min(p.gb, p.ext + rate * 1.6);
+    if (p.ext >= p.gb) { p.part = 0; log(p.name + ': zip deleted after extract'); p.phase = 'install';
+      log(p.name + ': run ' + (p.msi ? 'msiexec.exe /i "...\\wec_client_xxxxxxxx.msi" /qn /norestart' : '"...\\image\\Installer.exe" -i deploy --offline_mode -q -o "...\\image\\Collection.xml"')); p.t = 0; }
+  } else if (p.phase === 'install') {
+    if (++p.t > 6) { p.ext = 0; p.done = true; p.phase = 'installed'; log(p.name + ': installed (exit 0); staging removed', 'g'); sim.cur++; }
+  }
+  drawSim();
+}
+function run(){
+  sim.running = true; sim.cur = 0;
+  sim.pk.forEach(function(p){ p.phase = 'waiting'; });
+  $('sim-start').disabled = true; $('sim-again').disabled = true; $('sim-exit').textContent = 'running';
+  log('=== run start, Windows build 26100');
+  log('free space checked against the ' + CAP.recommended_free_gb + ' GB gate');
+  log('guarding the Autodesk 2025 entries');
+  sim.timer = setInterval(step, 110);
+}
+function finish(){
+  clearInterval(sim.timer); sim.running = false;
+  log('all Autodesk 2025 entries unchanged', 'g');
+  log('staging folder emptied'); log('=== run end, exit 0', 'g');
+  $('sim-exit').innerHTML = '<span class="pill ok">0</span> all three installed';
+  $('sim-kill').disabled = true; $('sim-again').disabled = true; $('sim-start').disabled = true;
+  drawSim();
+}
+$('sim-start').addEventListener('click', run);
+$('sim-again').addEventListener('click', run);
+$('sim-reset').addEventListener('click', function(){ if (sim.timer) clearInterval(sim.timer); simInit(); });
+$('sim-kill').addEventListener('click', function(){
+  clearInterval(sim.timer); sim.running = false;
+  var p = sim.pk[sim.cur];
+  p.phase = 'killed';
+  log('process killed (reboot, power cut or a JumpCloud timeout)', 'e');
+  log(p.name + ': ' + fmt(p.part, 2) + ' GB kept in ' + p.name.replace(/\s/g, '') + '.zip.part', 'w');
+  $('sim-exit').innerHTML = '<span class="pill warn">none</span> the task re-runs at the next boot';
+  p.phase = 'waiting';
+  $('sim-kill').disabled = true; $('sim-again').disabled = false;
+  drawSim();
+});
+
+/* ---------- harness results ---------- */
+function codeCls(c){ return c === 0 || c === 3010 ? 'ok' : (c === 2 ? 'warn' : 'bad'); }
+$('runs-h').textContent = RUNS.passed + ' of ' + RUNS.rows.length + ' scenarios behaved as designed';
+$('runs-sub').textContent = 'PowerShell ' + RUNS.pwsh + ' ran the real script against a local stand-in for Egnyte with real zip files. Installers need Windows, so on this run the script logged the exact command and the harness supplied the uninstall-registry state an installer leaves; the pilot runs them for real.';
+$('scen').innerHTML = RUNS.rows.map(function(r, k){
+  return '<button type="button" data-k="' + k + '" aria-pressed="' + (k === 0) + '"><span class="id">' + r.id + '</span><span>' + esc(r.title) + '</span><span class="pill ' + codeCls(r.got) + '">' + r.got + '</span></button>';
+}).join('');
+function showScen(k){
+  var r = RUNS.rows[k];
+  document.querySelectorAll('#scen button').forEach(function(b){ b.setAttribute('aria-pressed', String(+b.dataset.k === k)); });
+  $('scen-detail').innerHTML = '<h2>' + esc(r.id + ' ' + r.title) + '</h2>' +
+    (r.note ? '<p class="mut">' + esc(r.note) + '</p>' : '') +
+    '<dl class="kv"><dt>Expected exit</dt><dd class="mono">' + r.expect + '</dd><dt>Got</dt><dd class="mono">' + r.got + ' ' + (r.ok ? '<span class="pill ok">as designed</span>' : '<span class="pill bad">differs</span>') + '</dd>' +
+    '<dt>HTTP requests</dt><dd class="mono">' + r.requests + '</dd><dt>with a Range header</dt><dd class="mono">' + r.range_requests + '</dd>' +
+    '<dt>Left in staging</dt><dd class="mono">' + r.leftover + ' bytes</dd></dl>' +
+    '<h3 style="margin-top:12px">From the log</h3><pre>' + esc(r.evidence.map(function(l){ return l.replace(/^\d{4}-\d\d-\d\d \d\d:\d\d:\d\d /, ''); }).join('\n')) + '</pre>' +
+    '<p class="note">' + esc(meaning(r.got)) + '</p>';
+}
+function meaning(c){ for (var i = 0; i < CODES.length; i++) if (+CODES[i][0] === c) return 'Exit ' + c + ' means: ' + CODES[i][1].toLowerCase() + '. What to do: ' + CODES[i][2] + '.'; return ''; }
+$('scen').addEventListener('click', function(e){ var b = e.target.closest('button'); if (b) showScen(+b.dataset.k); });
+
+/* ---------- jumpcloud + plan ---------- */
+$('jc-bytes').textContent = fmt(RUNS.command_bytes / 1024, 1) + ' KB, script and settings embedded';
+$('codes').querySelector('tbody').innerHTML = CODES.map(function(c){
+  return '<tr><td><span class="pill ' + codeCls(+c[0]) + '">' + c[0] + '</span></td><td>' + esc(c[1]) + '</td><td>' + esc(c[2]) + '</td></tr>';
+}).join('');
+$('plan').querySelector('tbody').innerHTML = PLAN.rows.map(function(r){
+  return '<tr><td class="mono">' + r[0] + '</td><td>' + esc(r[1]) + '<div class="note" style="margin:2px 0 0">' + esc(r[3].replace(/`/g, '')) + '</div></td><td class="mono">' + r[2] + '</td></tr>';
+}).join('') + '<tr><td></td><td><b>Total</b></td><td class="mono"><b>' + PLAN.total + '</b></td></tr>';
+
+simInit(); calc(); showScen(0); show(location.hash.slice(1));
+</script>
+
+</body>
+</html>
